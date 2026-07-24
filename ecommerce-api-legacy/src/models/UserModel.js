@@ -7,7 +7,7 @@ class UserModel {
 
   async create(name, email, passwordHash) {
     const result = await dbRun(
-      'INSERT INTO users (name, email, pass) VALUES (?, ?, ?)',
+      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
       [name, email, passwordHash]
     );
     return result.lastID;

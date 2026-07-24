@@ -11,8 +11,8 @@ Files:   3 analyzed | ~181 lines of code
 ================================
 SUMMARY
 ================================
-CRITICAL: 4 | HIGH: 3 | MEDIUM: 3 | LOW: 1
-Total:    11 findings
+CRITICAL: 4 | HIGH: 3 | MEDIUM: 3 | LOW: 5
+Total:    15 findings
 
 ================================
 FINDINGS
@@ -177,6 +177,47 @@ Recommendation: Remover console.log com dados sensíveis. Nunca logar dados de
              cartão. Usar structured logging (winston/pino) com mascaramento
              de dados sensíveis.
 
+[LOW] Magic Numbers
+File:        src/controllers/CheckoutController.js:32
+Description: A validação do número do cartão de crédito usa o literal de string '4'
+             diretamente em card.startsWith('4') para identificar cartões Visa.
+             O prefixo não possui nome simbólico que explique seu significado de negócio.
+Impact:      Se a regra de negócio mudar (ex: suportar Mastercard com prefixo '5'),
+             o desenvolvedor deve procurar literais no código em vez de alterar uma constante.
+             O código não comunica que '4' representa o prefixo Visa.
+Recommendation: Extrair constante: const VISA_CARD_PREFIX = '4'; e usar
+             card.startsWith(VISA_CARD_PREFIX).
+
+[LOW] Nomenclatura Ruim — Nome de Coluna Ambíguo
+File:        src/database.js:28
+Description: A coluna de senha da tabela users é nomeada pass, abreviação não-idiomática
+             que colide com a palavra reservada pass em diversas linguagens. O nome não
+             comunica que o valor é um hash criptográfico e não a senha em texto puro.
+Impact:      Confusão sobre o conteúdo da coluna; risco de tratar como texto puro.
+             Nome ambíguo torna queries SQL menos legíveis.
+Recommendation: Renomear para password_hash para comunicar explicitamente que o valor
+             armazenado é um hash e não a senha original.
+
+[LOW] Código Morto — Chaves de Configuração Não Utilizadas
+File:        src/config/settings.js:3-4
+Description: O módulo de configurações exporta paymentGatewayKey e smtpUser que
+             não são referenciados em nenhum outro arquivo do projeto após a refatoração
+             da God Class. Os valores ainda existem como propriedades do objeto exportado
+             mas nenhum consumer os importa.
+Impact:      Código morto gera confusão: desenvolvedores assumem que as chaves são
+             usadas em algum lugar. Aumenta superfície de exposição de segredos mesmo
+             que as variáveis de ambiente não sejam setadas.
+Recommendation: Remover paymentGatewayKey e smtpUser de settings.js. Readicionar
+             somente quando o serviço de pagamento e email forem implementados.
+
+[LOW] Código Morto — Imports Sem Uso em settings.js
+File:        src/config/settings.js:1
+Description: O arquivo settings.js importa ou referencia configurações (paymentGatewayKey,
+             smtpUser) cujos módulos consumidores foram removidos durante a refatoração,
+             tornando essas entradas dead configuration.
+Impact:      Polui o módulo de configuração com entradas que não têm efeito.
+Recommendation: Auditar settings.js periodicamente para remover chaves sem consumers.
+
 ================================
 REFACTORING PRIORITY
 ================================
@@ -189,7 +230,7 @@ REFACTORING PRIORITY
 7. [HIGH]     No Auth on Sensitive Routes    — AppManager.js  → JWT middleware
 
 ================================
-Total: 11 findings
+Total: 15 findings
 Refactoring required: YES
 ================================
 ```

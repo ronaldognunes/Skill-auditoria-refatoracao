@@ -4,8 +4,6 @@ from models.task import Task
 from models.user import User
 from models.category import Category
 from datetime import datetime, timedelta
-from utils.helpers import format_date, calculate_percentage
-import json
 
 report_bp = Blueprint('reports', __name__)
 
@@ -21,11 +19,11 @@ def summary_report():
     done = Task.query.filter_by(status='done').count()
     cancelled = Task.query.filter_by(status='cancelled').count()
 
-    p1 = Task.query.filter_by(priority=1).count()
-    p2 = Task.query.filter_by(priority=2).count()
-    p3 = Task.query.filter_by(priority=3).count()
-    p4 = Task.query.filter_by(priority=4).count()
-    p5 = Task.query.filter_by(priority=5).count()
+    priority_critical = Task.query.filter_by(priority=1).count()
+    priority_high     = Task.query.filter_by(priority=2).count()
+    priority_medium   = Task.query.filter_by(priority=3).count()
+    priority_low      = Task.query.filter_by(priority=4).count()
+    priority_minimal  = Task.query.filter_by(priority=5).count()
 
     all_tasks = Task.query.all()
     overdue_count = 0
@@ -81,11 +79,11 @@ def summary_report():
             'cancelled': cancelled,
         },
         'tasks_by_priority': {
-            'critical': p1,
-            'high': p2,
-            'medium': p3,
-            'low': p4,
-            'minimal': p5,
+            'critical': priority_critical,
+            'high':     priority_high,
+            'medium':   priority_medium,
+            'low':      priority_low,
+            'minimal':  priority_minimal,
         },
         'overdue': {
             'count': overdue_count,

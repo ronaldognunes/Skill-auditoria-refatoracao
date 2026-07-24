@@ -11,11 +11,11 @@ class Category(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
-        d = {
+        result = {
             'id': self.id,
             'name': self.name,
             'description': self.description,
             'color': self.color,
             'created_at': str(self.created_at),
         }
-        return d
+        return result

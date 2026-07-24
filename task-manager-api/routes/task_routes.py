@@ -4,7 +4,7 @@ from models.task import Task
 from models.user import User
 from models.category import Category
 from datetime import datetime
-import json, os, sys, time
+from utils.helpers import MIN_TITLE_LENGTH, MAX_TITLE_LENGTH, MIN_PRIORITY, MAX_PRIORITY
 
 task_bp = Blueprint('tasks', __name__)
 
@@ -93,10 +93,10 @@ def create_task():
     if not title:
         return jsonify({'error': 'Título é obrigatório'}), 400
 
-    if len(title) < 3:
+    if len(title) < MIN_TITLE_LENGTH:
         return jsonify({'error': 'Título muito curto'}), 400
 
-    if len(title) > 200:
+    if len(title) > MAX_TITLE_LENGTH:
         return jsonify({'error': 'Título muito longo'}), 400
 
     description = data.get('description', '')
@@ -110,7 +110,7 @@ def create_task():
     if status not in ['pending', 'in_progress', 'done', 'cancelled']:
         return jsonify({'error': 'Status inválido'}), 400
 
-    if priority < 1 or priority > 5:
+    if priority < MIN_PRIORITY or priority > MAX_PRIORITY:
         return jsonify({'error': 'Prioridade deve ser entre 1 e 5'}), 400
 
     if user_id:
@@ -164,9 +164,9 @@ def update_task(task_id):
         return jsonify({'error': 'Dados inválidos'}), 400
 
     if 'title' in data:
-        if len(data['title']) < 3:
+        if len(data['title']) < MIN_TITLE_LENGTH:
             return jsonify({'error': 'Título muito curto'}), 400
-        if len(data['title']) > 200:
+        if len(data['title']) > MAX_TITLE_LENGTH:
             return jsonify({'error': 'Título muito longo'}), 400
         task.title = data['title']
 
@@ -179,7 +179,7 @@ def update_task(task_id):
         task.status = data['status']
 
     if 'priority' in data:
-        if data['priority'] < 1 or data['priority'] > 5:
+        if data['priority'] < MIN_PRIORITY or data['priority'] > MAX_PRIORITY:
             return jsonify({'error': 'Prioridade deve ser entre 1 e 5'}), 400
         task.priority = data['priority']
 

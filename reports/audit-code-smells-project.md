@@ -9,8 +9,8 @@ Files:   4 analyzed | ~784 lines of code
 ================================
 SUMMARY
 ================================
-CRITICAL: 6 | HIGH: 2 | MEDIUM: 4 | LOW: 1
-Total:    13 findings
+CRITICAL: 6 | HIGH: 2 | MEDIUM: 4 | LOW: 5
+Total:    17 findings
 
 ================================
 FINDINGS
@@ -218,6 +218,45 @@ Recommendation: Configurar DEBUG via variável de ambiente (DEBUG=os.environ.get
              Substituir todos os print() por logging.getLogger(__name__) com níveis apropriados
              (logging.info, logging.error).
 
+[LOW] Magic Numbers
+File:        models.py:214-217
+Description: A função relatorio_vendas() usa literais numéricos soltos para determinar
+             faixas de desconto: 10000, 5000 e 1000 como thresholds de faturamento e
+             0.10, 0.05 e 0.02 como taxas de desconto. Os valores não possuem nome
+             simbólico, tornando opaco o significado de negócio de cada número.
+Impact:      Alterar regras de desconto exige busca manual por literais no código.
+             Risco de inconsistência se apenas parte dos literais for atualizada.
+             Código difícil de entender sem documentação externa.
+Recommendation: Extrair constantes nomeadas no topo do arquivo:
+             FATURAMENTO_ALTO = 10000, TAXA_DESCONTO_ALTO = 0.10, etc.
+
+[LOW] Nomenclatura Ruim de Variáveis
+File:        models.py:162-164 | models.py:186-190
+Description: Nas funções get_pedidos_usuario() e get_todos_pedidos(), cursores auxiliares
+             são nomeados cursor2 e cursor3 — nomes genéricos indexados que não comunicam
+             o propósito da query executada (buscar itens do pedido, buscar nome do produto).
+Impact:      Leitura difícil; desenvolvedor precisa inspecionar o corpo da query para
+             entender o que cursor2 representa. Aumenta tempo de onboarding.
+Recommendation: Renomear para nomes semânticos: itens_cursor e produto_cursor.
+
+[LOW] Nomenclatura Ruim — Uso de Builtin como Nome de Variável
+File:        controllers.py:54 | controllers.py:152
+Description: Em criar_produto() e criar_usuario(), a variável local id recebe o
+             lastrowid do cursor após INSERT. O nome id sobresombra o builtin id()
+             do Python dentro do escopo da função.
+Impact:      Shadowing de builtins é sutil e pode causar bugs inesperados se id()
+             for chamado posteriormente. Reduz legibilidade.
+Recommendation: Renomear para produto_id em criar_produto() e usuario_id em criar_usuario().
+
+[LOW] Código Morto — Import Não Utilizado
+File:        controllers.py:3
+Description: A linha from database import get_db está presente em controllers.py
+             mas get_db não é chamada em nenhum ponto do arquivo. O acesso ao banco
+             é realizado diretamente via import de models.py.
+Impact:      Import desnecessário polui o namespace, aumenta tempo de carregamento
+             e confunde sobre qual módulo gerencia a conexão com o banco.
+Recommendation: Remover a linha from database import get_db de controllers.py.
+
 ================================
 REFACTORING PRIORITY
 ================================
@@ -231,7 +270,7 @@ REFACTORING PRIORITY
 8. [HIGH]     Business Logic in Handler  — controllers.py + models → Playbook #5
 
 ================================
-Total: 13 findings
+Total: 17 findings
 Refactoring required: YES
 ================================
 ```

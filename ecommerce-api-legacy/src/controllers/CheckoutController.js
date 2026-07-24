@@ -6,6 +6,7 @@ const paymentModel = require('../models/PaymentModel');
 const auditModel = require('../models/AuditModel');
 
 const SALT_ROUNDS = 12;
+const VISA_CARD_PREFIX = '4';
 
 class CheckoutController {
   async processCheckout(req, res, next) {
@@ -29,7 +30,7 @@ class CheckoutController {
         userId = user.id;
       }
 
-      const paymentStatus = card.startsWith('4') ? 'PAID' : 'DENIED';
+      const paymentStatus = card.startsWith(VISA_CARD_PREFIX) ? 'PAID' : 'DENIED';
       if (paymentStatus === 'DENIED') return res.status(400).json({ error: 'Pagamento recusado' });
 
       const enrollmentId = await enrollmentModel.create(userId, courseId);

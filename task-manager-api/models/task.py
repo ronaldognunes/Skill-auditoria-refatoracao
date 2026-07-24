@@ -42,8 +42,8 @@ class Task(db.Model):
         else:
             return False
 
-    def validate_priority(self, p):
-        if p >= 1 and p <= 5:
+    def validate_priority(self, value):
+        if value >= 1 and value <= 5:
             return True
         return False
 

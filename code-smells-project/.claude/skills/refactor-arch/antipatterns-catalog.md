@@ -1,6 +1,6 @@
 # Anti-Patterns Catalog
 
-Catálogo de 14 anti-patterns arquiteturais e de segurança para detecção automática durante auditoria.
+Catálogo de 17 anti-patterns arquiteturais e de segurança para detecção automática durante auditoria.
 
 Para cada anti-pattern, verifique o sinal de detecção no código fonte. Registre cada ocorrência com arquivo e linha.
 
@@ -217,3 +217,48 @@ Para cada anti-pattern, verifique o sinal de detecção no código fonte. Regist
 - `app.run(host='0.0.0.0', debug=True)` — expõe debugger Werkzeug com execução de código
 
 **Impacto:** Exposição de debugger interativo (permite execução de código arbitrário), vazamento de informações sensíveis em logs.
+
+---
+
+### 15. Magic Numbers
+**Severidade:** LOW
+**Descrição:** Valores numéricos ou de string literais sem nome simbólico espalhados pelo código, tornando o propósito do valor opaco.
+
+**Sinais de Detecção:**
+- Comparações com literais numéricos sem constante nomeada: `if status == 2:`, `if role == 3:`
+- Limites e thresholds sem nome: `if len(items) > 100:`, `if price > 9999:`
+- Timeouts e delays hardcoded: `time.sleep(5)`, `setTimeout(fn, 3000)`
+- Códigos HTTP como literais inline: `return jsonify(...), 422` sem constante `HTTP_UNPROCESSABLE_ENTITY`
+- Multiplicadores de negócio sem explicação: `total = subtotal * 1.15` (sem indicar que 1.15 é taxa de imposto)
+
+**Impacto:** Código difícil de entender e manter; alterar o valor exige busca global no código em vez de mudar uma constante.
+
+---
+
+### 16. Nomenclatura Ruim de Variáveis e Funções
+**Severidade:** LOW
+**Descrição:** Variáveis, funções ou parâmetros com nomes genéricos, abreviados ou sem semântica, dificultando a leitura e compreensão do código.
+
+**Sinais de Detecção:**
+- Variáveis de uma ou duas letras fora de loops de índice: `d`, `x`, `n`, `tmp`, `res`
+- Abreviações sem contexto: `usr` em vez de `user`, `dt` em vez de `date`, `prd` em vez de `product`
+- Funções com nomes genéricos: `process()`, `handle()`, `do_stuff()`, `run()`
+- Variáveis booleanas sem prefixo `is_`, `has_`, `can_`: `active = True` em vez de `is_active = True`
+- Parâmetros nomeados `data`, `info`, `obj` sem indicar o tipo ou domínio
+
+**Impacto:** Reduz legibilidade, aumenta o tempo de onboarding de novos desenvolvedores e facilita introdução de bugs por mal-entendimento do propósito.
+
+---
+
+### 17. Código Morto / Código Comentado
+**Severidade:** LOW
+**Descrição:** Funções, variáveis ou blocos de código não utilizados, ou código comentado que permanece no codebase sem propósito documentado.
+
+**Sinais de Detecção:**
+- Funções definidas mas nunca chamadas em nenhum ponto do projeto
+- Imports não utilizados: `import os` ou `const _ = require('lodash')` sem uso posterior
+- Blocos de código comentado com `#` ou `//` com mais de 3 linhas sem explicação
+- Variáveis declaradas e atribuídas mas nunca lidas: `result = fetch_data()` sem uso de `result`
+- Parâmetros de função recebidos mas ignorados no corpo da função
+
+**Impacto:** Polui o codebase, gera confusão sobre o que está ativo, aumenta o esforço de leitura e pode mascarar código legado que deveria ter sido removido.

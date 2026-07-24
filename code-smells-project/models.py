@@ -1,6 +1,14 @@
 from database import get_db
 import sqlite3
 
+# Constantes para cálculo de desconto em relatório
+DESCONTO_FATURAMENTO_ALTO = 10000
+DESCONTO_FATURAMENTO_MEDIO = 5000
+DESCONTO_FATURAMENTO_BAIXO = 1000
+TAXA_DESCONTO_ALTO = 0.10
+TAXA_DESCONTO_MEDIO = 0.05
+TAXA_DESCONTO_BAIXO = 0.02
+
 def get_todos_produtos():
     db = get_db()
     cursor = db.cursor()
@@ -184,13 +192,13 @@ def get_pedidos_usuario(usuario_id):
             "itens": []
         }
 
-        cursor2 = db.cursor()
-        cursor2.execute("SELECT * FROM itens_pedido WHERE pedido_id = " + str(row["id"]))
-        itens = cursor2.fetchall()
+        itens_cursor = db.cursor()
+        itens_cursor.execute("SELECT * FROM itens_pedido WHERE pedido_id = " + str(row["id"]))
+        itens = itens_cursor.fetchall()
         for item in itens:
-            cursor3 = db.cursor()
-            cursor3.execute("SELECT nome FROM produtos WHERE id = " + str(item["produto_id"]))
-            prod = cursor3.fetchone()
+            produto_cursor = db.cursor()
+            produto_cursor.execute("SELECT nome FROM produtos WHERE id = " + str(item["produto_id"]))
+            prod = produto_cursor.fetchone()
             pedido["itens"].append({
                 "produto_id": item["produto_id"],
                 "produto_nome": prod["nome"] if prod else "Desconhecido",
@@ -216,13 +224,13 @@ def get_todos_pedidos():
             "criado_em": row["criado_em"],
             "itens": []
         }
-        cursor2 = db.cursor()
-        cursor2.execute("SELECT * FROM itens_pedido WHERE pedido_id = " + str(row["id"]))
-        itens = cursor2.fetchall()
+        itens_cursor = db.cursor()
+        itens_cursor.execute("SELECT * FROM itens_pedido WHERE pedido_id = " + str(row["id"]))
+        itens = itens_cursor.fetchall()
         for item in itens:
-            cursor3 = db.cursor()
-            cursor3.execute("SELECT nome FROM produtos WHERE id = " + str(item["produto_id"]))
-            prod = cursor3.fetchone()
+            produto_cursor = db.cursor()
+            produto_cursor.execute("SELECT nome FROM produtos WHERE id = " + str(item["produto_id"]))
+            prod = produto_cursor.fetchone()
             pedido["itens"].append({
                 "produto_id": item["produto_id"],
                 "produto_nome": prod["nome"] if prod else "Desconhecido",
@@ -254,12 +262,12 @@ def relatorio_vendas():
     cancelados = cursor.fetchone()[0]
 
     desconto = 0
-    if faturamento > 10000:
-        desconto = faturamento * 0.1
-    elif faturamento > 5000:
-        desconto = faturamento * 0.05
-    elif faturamento > 1000:
-        desconto = faturamento * 0.02
+    if faturamento > DESCONTO_FATURAMENTO_ALTO:
+        desconto = faturamento * TAXA_DESCONTO_ALTO
+    elif faturamento > DESCONTO_FATURAMENTO_MEDIO:
+        desconto = faturamento * TAXA_DESCONTO_MEDIO
+    elif faturamento > DESCONTO_FATURAMENTO_BAIXO:
+        desconto = faturamento * TAXA_DESCONTO_BAIXO
 
     return {
         "total_pedidos": total_pedidos,

@@ -3,7 +3,8 @@ from database import db
 from models.user import User
 from models.task import Task
 from datetime import datetime
-import hashlib, json, re
+import re
+from utils.helpers import MIN_PASSWORD_LENGTH, VALID_ROLES
 
 user_bp = Blueprint('users', __name__)
 
@@ -61,14 +62,14 @@ def create_user():
     if not re.match(r'^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$', email):
         return jsonify({'error': 'Email inválido'}), 400
 
-    if len(password) < 4:
+    if len(password) < MIN_PASSWORD_LENGTH:
         return jsonify({'error': 'Senha deve ter no mínimo 4 caracteres'}), 400
 
     existing = User.query.filter_by(email=email).first()
     if existing:
         return jsonify({'error': 'Email já cadastrado'}), 409
 
-    if role not in ['user', 'admin', 'manager']:
+    if role not in VALID_ROLES:
         return jsonify({'error': 'Role inválido'}), 400
 
     user = User()
@@ -112,12 +113,12 @@ def update_user(user_id):
         user.email = data['email']
 
     if 'password' in data:
-        if len(data['password']) < 4:
+        if len(data['password']) < MIN_PASSWORD_LENGTH:
             return jsonify({'error': 'Senha muito curta'}), 400
         user.set_password(data['password'])
 
     if 'role' in data:
-        if data['role'] not in ['user', 'admin', 'manager']:
+        if data['role'] not in VALID_ROLES:
             return jsonify({'error': 'Role inválido'}), 400
         user.role = data['role']
 

@@ -1,6 +1,5 @@
 from flask import request, jsonify
 import models
-from database import get_db
 
 def listar_produtos():
     try:
@@ -53,9 +52,9 @@ def criar_produto():
         if categoria not in categorias_validas:
             return jsonify({"erro": "Categoria inválida. Válidas: " + str(categorias_validas)}), 400
 
-        id = models.criar_produto(nome, descricao, preco, estoque, categoria)
-        print("Produto criado com ID: " + str(id))
-        return jsonify({"dados": {"id": id}, "sucesso": True, "mensagem": "Produto criado"}), 201
+        produto_id = models.criar_produto(nome, descricao, preco, estoque, categoria)
+        print("Produto criado com ID: " + str(produto_id))
+        return jsonify({"dados": {"id": produto_id}, "sucesso": True, "mensagem": "Produto criado"}), 201
 
     except Exception as e:
         print("ERRO ao criar produto: " + str(e))
@@ -157,9 +156,9 @@ def criar_usuario():
         if not nome or not email or not senha:
             return jsonify({"erro": "Nome, email e senha são obrigatórios"}), 400
 
-        id = models.criar_usuario(nome, email, senha)
+        usuario_id = models.criar_usuario(nome, email, senha)
         print("Usuário criado: " + email)
-        return jsonify({"dados": {"id": id}, "sucesso": True}), 201
+        return jsonify({"dados": {"id": usuario_id}, "sucesso": True}), 201
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500

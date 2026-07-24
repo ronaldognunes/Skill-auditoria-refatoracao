@@ -8,8 +8,8 @@ Files:   10 analyzed | ~1060 lines of code
 ================================
 SUMMARY
 ================================
-CRITICAL: 3 | HIGH: 2 | MEDIUM: 3 | LOW: 1
-Total:    9 findings
+CRITICAL: 3 | HIGH: 2 | MEDIUM: 3 | LOW: 12
+Total:    20 findings
 
 ================================
 FINDINGS
@@ -151,6 +151,100 @@ Recommendation: Controlar debug via variável de ambiente: DEBUG=os.getenv('DEBU
              Substituir print() pelo módulo logging com níveis apropriados (INFO, ERROR).
              Nunca fazer host='0.0.0.0' com debug=True em produção.
 
+[LOW] Magic Numbers — Limites de Validação em task_routes.py
+File:        routes/task_routes.py:72,74,85
+Description: Validações de título usam literais < 3 e > 200 e prioridade usa < 1 e > 5
+             diretamente nas comparações. Os números não possuem nomes simbólicos que
+             comuniquem o significado de negócio de cada limite.
+Impact:      Alterar limites exige busca manual por literais em múltiplos pontos.
+             Código não comunica por que 200 é o máximo de caracteres ou por que 5
+             é a prioridade máxima.
+Recommendation: Extrair em utils/helpers.py: MIN_TITLE_LENGTH = 3, MAX_TITLE_LENGTH = 200,
+             MIN_PRIORITY = 1, MAX_PRIORITY = 5 e importar nos route handlers.
+
+[LOW] Magic Numbers — Limites de Validação em user_routes.py
+File:        routes/user_routes.py:63,70
+Description: Validação de senha usa literal < 4 e validação de role compara contra a
+             lista inline ['user', 'admin', 'manager'] sem constante nomeada.
+Impact:      Listas de valores válidos duplicadas em create e update de usuário.
+             Alterar comprimento mínimo de senha ou adicionar novo role exige busca global.
+Recommendation: Extrair MIN_PASSWORD_LENGTH = 4 e VALID_ROLES = ['user', 'admin', 'manager']
+             em utils/helpers.py.
+
+[LOW] Magic Numbers — Thresholds em report_routes.py
+File:        routes/report_routes.py:24-28
+Description: O summary_report usa literais numéricos para calcular médias e percentuais
+             de conclusão de tarefas sem constantes nomeadas para os thresholds utilizados.
+Impact:      Thresholds de relatório sem nome simbólico dificultam ajuste de métricas
+             de produtividade sem alterar lógica de apresentação.
+Recommendation: Extrair constantes nomeadas para thresholds de produtividade.
+
+[LOW] Nomenclatura Ruim — Variáveis p1 a p5 em report_routes.py
+File:        routes/report_routes.py:24-28
+Description: Contadores de prioridade são nomeados p1, p2, p3, p4, p5 em vez de nomes
+             que comunicam a prioridade que cada variável representa.
+Impact:      p1 pode significar "prioridade 1 (crítica)" ou "primeiro parâmetro". O
+             leitor precisa rastrear o código para descobrir o significado.
+Recommendation: Renomear para priority_critical, priority_high, priority_medium,
+             priority_low, priority_minimal.
+
+[LOW] Nomenclatura Ruim — Variável 'd' em models/category.py
+File:        models/category.py:14
+Description: A função to_dict() usa d = {} como nome do dicionário de retorno, uma
+             abreviação de uma letra sem semântica fora de contexto de iteração.
+Impact:      Nome genérico reduz legibilidade; convenção de uma letra deve ser reservada
+             para índices de loop (i, j, k).
+Recommendation: Renomear para result = {} ou category_dict = {}.
+
+[LOW] Nomenclatura Ruim — Parâmetro 'p' em models/task.py
+File:        models/task.py:45
+Description: O método validate_priority(self, p) usa p como nome do parâmetro de
+             prioridade, abreviação que não comunica o tipo ou domínio do valor recebido.
+Impact:      Ao ler a assinatura do método, p é ambíguo (poderia ser page, product,
+             ou qualquer outra coisa começando com p).
+Recommendation: Renomear o parâmetro para value ou priority_value.
+
+[LOW] Código Morto — Imports Não Utilizados em task_routes.py
+File:        routes/task_routes.py:7
+Description: As linhas import json, import os, import sys e import time estão presentes
+             em task_routes.py mas nenhum desses módulos é referenciado no corpo do arquivo.
+Impact:      Imports desnecessários aumentam tempo de carregamento e confundem sobre
+             dependências reais do módulo.
+Recommendation: Remover as 4 linhas de import não utilizadas.
+
+[LOW] Código Morto — Imports Não Utilizados em user_routes.py
+File:        routes/user_routes.py:6
+Description: import hashlib e import json estão presentes mas não são usados em
+             nenhuma função de user_routes.py após a migração para werkzeug.security.
+Impact:      hashlib importado sugere falsamente que ainda há hashing manual no arquivo.
+Recommendation: Remover import hashlib e import json de user_routes.py.
+
+[LOW] Código Morto — Funções Importadas Sem Uso em report_routes.py
+File:        routes/report_routes.py:7
+Description: from utils.helpers import format_date, calculate_percentage importa duas
+             funções que não são chamadas em nenhum ponto de report_routes.py.
+Impact:      Import morto sugere que o arquivo usa helpers de formatação quando não usa.
+             Confunde ao auditar dependências do módulo de relatórios.
+Recommendation: Remover o import de format_date e calculate_percentage de report_routes.py.
+
+[LOW] Código Morto — Imports Não Utilizados em utils/helpers.py
+File:        utils/helpers.py:2-7
+Description: O arquivo helpers.py importa os, json, sys, math e hashlib. Nenhum desses
+             módulos é referenciado nas funções definidas no arquivo.
+Impact:      5 imports desnecessários poluem o módulo utilitário. hashlib sugere
+             falsamente que há operações criptográficas no arquivo.
+Recommendation: Remover todos os imports não utilizados de utils/helpers.py.
+
+[LOW] Código Morto — Funções Nunca Chamadas em utils/helpers.py
+File:        utils/helpers.py:27-83
+Description: As funções generate_id(), is_valid_color() e process_task_data() estão
+             definidas em utils/helpers.py mas não são importadas ou chamadas em nenhum
+             ponto do projeto (verificado em todos os arquivos de routes e models).
+Impact:      Código morto que polui o módulo, aumenta esforço de leitura e pode
+             mascarar código legado que deveria ter sido removido.
+Recommendation: Remover as 3 funções. Se process_task_data contiver lógica relevante,
+             migrar para a camada de serviço apropriada antes de remover.
+
 ================================
 REFACTORING PRIORITY
 ================================
@@ -161,6 +255,6 @@ REFACTORING PRIORITY
 5. [HIGH]     Business Logic in Route       — task_routes.py, report_routes.py, user_routes.py → Playbook #1 + #5
 
 ================================
-Total: 9 findings
+Total: 20 findings
 Refactoring required: YES
 ================================

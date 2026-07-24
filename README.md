@@ -506,11 +506,19 @@ A skill `/refactor-arch` foi organizada em 6 arquivos de referência dentro de `
 
 **Agnóstico de tecnologia:** As heurísticas em `project-analysis.md` detectam a linguagem automaticamente pelos arquivos presentes e imports. O `architecture-guidelines.md` define estruturas MVC separadas para Python/Flask e Node.js/Express. O playbook inclui exemplos em ambas as linguagens para os padrões críticos.
 
-### Anti-patterns incluídos no catálogo (14)
+### Anti-patterns incluídos no catálogo (17)
 
-6 CRITICAL (segurança grave), 3 HIGH (violação MVC/SOLID), 3 MEDIUM (performance/qualidade), 2 LOW — cobrindo todos os problemas identificados nos 3 projetos mais padrões genéricos reutilizáveis.
+6 CRITICAL (segurança grave), 3 HIGH (violação MVC/SOLID), 4 MEDIUM (performance/qualidade), 4 LOW — cobrindo todos os problemas identificados nos 3 projetos mais padrões genéricos reutilizáveis.
 
 A detecção de APIs deprecated está explícita no anti-pattern #13 (MD5, SHA1, `new Buffer()`, algoritmo customizado de cripto, `Math.random()` para tokens).
+
+**3 anti-patterns LOW adicionados ao catálogo** com base no critério "melhorias de legibilidade, nomenclatura de variáveis ruins, ou magic numbers soltos pelo código":
+
+| # | Anti-pattern | Sinais de detecção |
+|---|---|---|
+| 15 | **Magic Numbers** | Literais numéricos sem constante nomeada (`< 3`, `> 200`, `1.15`, `'4'`) |
+| 16 | **Nomenclatura Ruim** | Variáveis de 1-2 letras, abreviações (`cursor2`, `d`, `p`), `id` sobresombreando builtin |
+| 17 | **Código Morto** | Imports não utilizados, funções definidas mas nunca chamadas, configurações sem consumers |
 
 ### Como a skill é agnóstica de tecnologia
 
@@ -527,11 +535,11 @@ A detecção de APIs deprecated está explícita no anti-pattern #13 (MD5, SHA1,
 
 | Projeto | CRITICAL | HIGH | MEDIUM | LOW | Total |
 |---|---|---|---|---|---|
-| code-smells-project | 4 | 2 | 2 | 1 | 9 |
-| ecommerce-api-legacy | 3 | 3 | 2 | 1 | 9 |
-| task-manager-api | 4 | 1 | 2 | 1 | 8 |
+| code-smells-project | 6 | 2 | 4 | 5 | 17 |
+| ecommerce-api-legacy | 4 | 3 | 3 | 5 | 15 |
+| task-manager-api | 3 | 2 | 3 | 12 | 20 |
 
-> Os relatórios completos estão em `reports/audit-project-{1,2,3}.md` (gerados pela execução da skill).
+> Os relatórios completos estão em [`reports/audit-code-smells-project.md`](reports/audit-code-smells-project.md), [`reports/audit-ecommerce-api-legacy.md`](reports/audit-ecommerce-api-legacy.md) e [`reports/audit-task-manager-api.md`](reports/audit-task-manager-api.md).
 
 ### Checklist de Validação
 

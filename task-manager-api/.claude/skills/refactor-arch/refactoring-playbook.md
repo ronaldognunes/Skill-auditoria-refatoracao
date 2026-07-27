@@ -429,6 +429,172 @@ def get_category_tasks(category_id):
 
 ---
 
+## Padrão 10: Fake/Missing Authentication → JWT Middleware
+
+**Anti-Pattern:** Fake/Missing Authentication | No Authentication on Sensitive Routes
+**Quando aplicar:** Ausência total de autenticação, token forjado (fake-jwt-token-<id>), ou rotas admin/financeiras sem middleware de verificação.
+
+### Before (Python/Flask — sem auth)
+```python
+# routes/user_routes.py — qualquer um pode deletar qualquer usuário
+@user_bp.route('/login', methods=['POST'])
+def login():
+    user = User.query.filter_by(email=email).first()
+    # FAKE JWT — trivialmente forjável
+    return jsonify({'token': 'fake-jwt-token-' + str(user.id)}), 200
+
+# routes/report_routes.py — dados financeiros públicos
+@report_bp.route('/admin/financial-report', methods=['GET'])
+def financial_report():
+    # sem verificação de token
+    return jsonify(get_report()), 200
+```
+
+### After (Python/Flask — JWT real)
+```python
+# src/middlewares/auth_middleware.py
+import jwt, os
+from functools import wraps
+from flask import request, jsonify
+
+JWT_SECRET = os.getenv('JWT_SECRET')
+
+def require_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Token ausente'}), 401
+        token = auth_header.split(' ')[1]
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            request.current_user = payload
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token expirado'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Token inválido'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+def require_admin(f):
+    @wraps(f)
+    @require_auth
+    def decorated(*args, **kwargs):
+        if request.current_user.get('role') != 'admin':
+            return jsonify({'error': 'Acesso negado'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+# src/views/routes.py — login retorna JWT real
+import jwt, os
+from datetime import datetime, timedelta
+
+@bp.route('/login', methods=['POST'])
+def login():
+    # ... verificar credenciais ...
+    payload = {
+        'sub': user.id,
+        'role': user.role,
+        'exp': datetime.utcnow() + timedelta(hours=8)
+    }
+    token = jwt.encode(payload, os.getenv('JWT_SECRET'), algorithm='HS256')
+    return jsonify({'token': token}), 200
+
+# Rotas protegidas por decorador
+@bp.route('/admin/financial-report', methods=['GET'])
+@require_admin
+def financial_report():
+    return jsonify(report_controller.get_financial_report()), 200
+
+@bp.route('/users/<int:user_id>', methods=['DELETE'])
+@require_auth
+def delete_user(user_id):
+    user_controller.delete(user_id)
+    return jsonify({'message': 'Usuário deletado'}), 200
+```
+
+### Before (Node.js/Express — sem auth)
+```javascript
+// routes/adminRoutes.js — dados financeiros públicos
+router.get('/financial-report', (req, res, next) =>
+  adminController.getFinancialReport(req, res, next));
+
+// routes/userRoutes.js — qualquer um deleta qualquer usuário
+router.delete('/:id', (req, res, next) =>
+  adminController.deleteUser(req, res, next));
+```
+
+### After (Node.js/Express — JWT middleware)
+```javascript
+// src/middlewares/authMiddleware.js
+const jwt = require('jsonwebtoken');
+const { jwtSecret } = require('../config/settings');
+
+function requireAuth(req, res, next) {
+  const auth = req.headers.authorization || '';
+  if (!auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token ausente' });
+  }
+  const token = auth.split(' ')[1];
+  try {
+    req.currentUser = jwt.verify(token, jwtSecret);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token inválido ou expirado' });
+  }
+}
+
+function requireAdmin(req, res, next) {
+  requireAuth(req, res, () => {
+    if (req.currentUser?.role !== 'admin') {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    next();
+  });
+}
+
+module.exports = { requireAuth, requireAdmin };
+
+// src/config/settings.js — adicionar jwtSecret
+module.exports = {
+  port: parseInt(process.env.PORT) || 3000,
+  dbPath: process.env.DB_PATH || ':memory:',
+  jwtSecret: process.env.JWT_SECRET || 'change-me-in-production',
+};
+
+// routes/adminRoutes.js — protegido por requireAdmin
+const { requireAdmin } = require('../middlewares/authMiddleware');
+router.get('/financial-report', requireAdmin,
+  (req, res, next) => adminController.getFinancialReport(req, res, next));
+
+// routes/userRoutes.js — protegido por requireAuth
+const { requireAuth } = require('../middlewares/authMiddleware');
+router.delete('/:id', requireAuth,
+  (req, res, next) => adminController.deleteUser(req, res, next));
+
+// routes/checkoutRoutes.js (ou userRoutes) — login emite JWT real
+const jwt = require('jsonwebtoken');
+const { jwtSecret } = require('../config/settings');
+
+router.post('/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const user = await userModel.findByEmail(email);
+    if (!user || !await bcrypt.compare(password, user.password_hash)) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+    const token = jwt.sign(
+      { sub: user.id, role: user.role },
+      jwtSecret,
+      { expiresIn: '8h' }
+    );
+    res.json({ token });
+  } catch (err) { next(err); }
+});
+```
+
+---
+
 ## Padrão 9: No Error Handling → Centralized Handler
 
 **Anti-Pattern:** Missing/Scattered Error Handling

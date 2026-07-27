@@ -65,7 +65,7 @@ Recommendation: Aplicar Playbook #6: Plaintext/Weak Password → Bcrypt.
              Substituir badCrypto() por bcrypt.hash() com SALT_ROUNDS=12.
              Remover senha padrão "123456". Rejeitar requisições sem senha.
 
-[CRITICAL] Fake / Missing Authentication
+[CRITICAL] Fake / Missing Authentication ✅ RESOLVIDO
 File:        src/AppManager.js:80-129, src/AppManager.js:131-137
 Description: Zero implementação de autenticação em toda a aplicação. O endpoint
              GET /api/admin/financial-report retorna dados financeiros completos
@@ -75,13 +75,15 @@ Description: Zero implementação de autenticação em toda a aplicação. O end
              de auth, JWT, session, ou qualquer mecanismo de controle de acesso.
 Impact:      Qualquer pessoa na internet pode acessar todos os dados financeiros
              e deletar qualquer usuário. Violação grave de LGPD/GDPR.
-Recommendation: Implementar JWT authentication middleware. Adicionar middleware
-             de autenticação nas rotas sensíveis. Implementar RBAC para separar
-             acesso de admin vs. usuário comum.
+Resolution:  Aplicado Playbook #10. Criado src/middlewares/authMiddleware.js com
+             requireAuth (verifica Bearer JWT via jsonwebtoken) e requireAdmin
+             (verifica role === 'admin'). jwtSecret movido para process.env.JWT_SECRET
+             em src/config/settings.js. GET /api/admin/financial-report protegido
+             por requireAdmin; DELETE /api/users/:id protegido por requireAdmin.
 
 --- HIGH ---
 
-[HIGH] No Authentication on Sensitive Routes
+[HIGH] No Authentication on Sensitive Routes ✅ RESOLVIDO
 File:        src/AppManager.js:80, src/AppManager.js:131
 Description: As rotas /api/admin/financial-report e DELETE /api/users/:id são
              explicitamente "admin" mas não possuem nenhum middleware de autenticação.
@@ -89,8 +91,9 @@ Description: As rotas /api/admin/financial-report e DELETE /api/users/:id são
              intermediário significa acesso público irrestrito.
 Impact:      Exposição de dados financeiros sensíveis (receita, alunos, valores
              pagos) a qualquer requisição anônima.
-Recommendation: Adicionar middleware de autenticação antes dos handlers:
-             app.get('/api/admin/financial-report', authMiddleware, adminMiddleware, handler)
+Resolution:  adminRoutes.js: router.get('/financial-report', requireAdmin, handler)
+             userRoutes.js:  router.delete('/:id', requireAdmin, handler)
+             Ambas as rotas agora exigem Bearer JWT com role=admin.
 
 [HIGH] Business Logic in Route Handler
 File:        src/AppManager.js:28-78 (checkout, 50 linhas), src/AppManager.js:80-129

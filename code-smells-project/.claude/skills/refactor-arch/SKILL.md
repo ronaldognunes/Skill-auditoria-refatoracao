@@ -81,6 +81,8 @@ Aguarde a resposta antes de continuar. Se a resposta for `n`, encerre aqui.
    | N+1 Query | Padrão 7: N+1 Query → JOIN |
    | Code Duplication | Padrão 8: Code Duplication → Helper/Service |
    | No Error Handling | Padrão 9: No Error Handling → Centralized Handler |
+   | Fake/Missing Authentication | Padrão 10: Fake Auth → JWT Middleware |
+   | No Auth on Sensitive Routes | Padrão 10: Fake Auth → JWT Middleware |
 
 4. **Preservar todos os endpoints originais e seus contratos de request/response**
 5. Criar a estrutura de diretórios MVC conforme `architecture-guidelines.md`
@@ -104,6 +106,8 @@ Validations:
 [ ] Parameterized queries in use
 [ ] Password hashing with bcrypt/werkzeug
 [ ] MVC layers properly separated
+[ ] JWT middleware on all sensitive routes (admin, delete, financial)
+[ ] Admin routes require admin role (RBAC)
 
 Anti-patterns resolved: <n>/<total>
 ================================
